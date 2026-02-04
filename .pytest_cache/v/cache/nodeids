@@ -1,0 +1,8 @@
+[
+  "tests/test_basic.py::test_construct_reduced_polynomial_system_for_simple_projection",
+  "tests/test_basic.py::test_generic_type1_elimination_has_no_parameter_conditions",
+  "tests/test_basic.py::test_stoichiometric_integrals_are_valid",
+  "tests/test_basic.py::test_three_species_critical_condition_matches_paper_example",
+  "tests/test_proper_lumping.py::test_parser_explicit_reversible_rates",
+  "tests/test_proper_lumping.py::test_proper_lumping_condition_for_michaelis_menten_symmetry"
+]
