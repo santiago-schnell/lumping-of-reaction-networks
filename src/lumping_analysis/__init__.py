@@ -15,6 +15,7 @@ from .reaction import Reaction
 from .network import ReactionNetwork
 from .parser import ReactionParser
 from .analyzer import LumpingAnalyzer
+from .singular import SingularIdeal
 from .report import (
     ReductionReportOptions,
     format_reduction_report,
@@ -31,6 +32,7 @@ __all__ = [
     "ReactionNetwork",
     "ReactionParser",
     "LumpingAnalyzer",
+    "SingularIdeal",
     "ReductionReportOptions",
     "format_reduction_report",
     "format_reduction_result",

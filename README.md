@@ -1,8 +1,5 @@
 # Lumping of reaction networks (Python)
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
 A Python package for analyzing **exact linear lumping** of parameter-dependent **mass action** reaction networks (and closely related polynomial ODE models).
 
 This repository accompanies the paper draft:
@@ -269,6 +266,31 @@ if analysis:
         print("  ", r, "= 0")
 ```
 
+### Lumping-adapted coordinates (coordinate completion)
+
+Sometimes it is useful to explicitly rewrite the ODE in coordinates where the first `e` variables are the lumped variables `y = T x`.
+
+Given a candidate lumping matrix `T` (shape `e×n`), the standard procedure is:
+
+1. complete `T` to an invertible `n×n` matrix `T*` by appending suitable rows,
+2. define the change of variables `y = T* x`,
+3. transform the vector field:
+
+```text
+y' = H(y,k) = T* F(T*^{-1} y, k).
+```
+
+The package provides a direct helper:
+
+```python
+out = an.lumping_adapted_system(T, y_prefix="y")
+print("T* =", out["T_star"])
+print("H_lumped =", out["H_lumped"])
+print("Depends on extra y?", out["lumped_depends_on_extra"])
+```
+
+See `examples/example_lumping_adapted_system.py` for a runnable script.
+
 ---
 
 ### 4) Constrained lumping
@@ -395,6 +417,18 @@ B = [  T̂  ]
     [ -I_{n-e} ]
 ```
 
+**Implementation note.** Any column basis of `ker(T)` is valid. The sign convention is irrelevant (multiplying a column by −1 does not change the kernel). The helper method
+
+```python
+ansatz = analyzer.row_echelon_ansatz(e=3, pivot_cols=[0,1,2], free_param_prefix="t")
+T = ansatz["T"]
+B = ansatz["B"]
+```
+
+constructs a row-echelon ansatz matrix `T` and a *polynomial* kernel basis `B` (matching the style used in the attached worksheet/notebook). See `examples/example_gpl_row_echelon_ideal_export.py` for an end-to-end run that also exports the resulting ideal to Singular.
+
+
+
 5. Insert `T` and `B` into the critical condition
 
 ```text
@@ -443,6 +477,13 @@ Typical tasks include:
 SymPy can compute Gröbner bases but does not aim to compete with specialized systems for large decompositions.
 
 **A minimal Singular workflow (practical template).**
+
+If you are using this Python package, you can generate such a script directly:
+
+```python
+I = analyzer.critical_ideal(T, kernel_basis=B)
+print(I.to_singular_script(compute_groebner=True, primary_decomposition=False))
+```
 
 Below is a small *template* you can adapt (Singular syntax). The key ideas are:
 

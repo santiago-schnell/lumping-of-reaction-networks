@@ -401,6 +401,315 @@ class LumpingAnalyzer:
             "solutions": solns,
         }
 
+
+
+    # ---------------------------------------------------------------------
+    # Row-echelon ansatz (general linear lumpings) and CAS-oriented workflows
+    # ---------------------------------------------------------------------
+
+    def row_echelon_ansatz(
+        self,
+        e: int,
+        *,
+        pivot_cols: Optional[Sequence[int]] = None,
+        free_param_prefix: str = "t",
+        flat_numbering: bool = True,
+    ) -> Dict[str, Any]:
+        """Construct a row-echelon ansatz for a general linear lumping map.
+
+        This mirrors the paper's discussion: for a desired reduced dimension `e`
+        (with `1 <= e < n`), choose a pivot set `I` of size `e`. Up to a permutation
+        of columns, a full-row-rank lumping matrix can be assumed to have the form
+
+            T_perm = [ I_e  |  Tbar ],
+
+        where `Tbar` is an `e × (n-e)` matrix of free parameters. A convenient
+        polynomial kernel basis is then
+
+            B_perm = [ -Tbar ]
+                     [  I    ].
+
+        When `pivot_cols` is not the first `e` columns, we permute columns back to
+        the original species ordering, producing matrices (T, B) satisfying T*B = 0.
+
+        Parameters
+        ----------
+        e:
+            Number of lumped variables (rows of T).
+        pivot_cols:
+            Indices (0-based) of the pivot columns. If None, uses [0, 1, ..., e-1].
+        free_param_prefix:
+            Prefix for newly created free parameters (default: 't').
+        flat_numbering:
+            If True, free parameters are named t1, t2, ... (as in the attached notebook).
+            If False, they are named t_ij.
+
+        Returns
+        -------
+        dict with keys:
+          - 'T': e×n row-echelon ansatz matrix in the original column order
+          - 'B': n×(n-e) polynomial kernel-basis matrix (satisfying T*B = 0)
+          - 'free_params': list of free parameter Symbols used in Tbar
+          - 'pivot_cols', 'nonpivot_cols', 'column_order'
+          - 'permutation_matrix': n×n matrix P such that (T*P) = T_perm
+        """
+        n = self.network.n_species
+        if not (1 <= int(e) < n):
+            raise ValueError(f"e must satisfy 1 <= e < n={n}; got {e}")
+
+        if pivot_cols is None:
+            piv = list(range(int(e)))
+        else:
+            piv = [int(i) for i in pivot_cols]
+
+        if len(piv) != int(e) or len(set(piv)) != int(e):
+            raise ValueError(f"pivot_cols must be a list of {e} distinct indices")
+        if any(i < 0 or i >= n for i in piv):
+            raise ValueError(f"pivot_cols entries must be in [0, {n-1}]")
+
+        nonpiv = [j for j in range(n) if j not in piv]
+        order = list(piv) + nonpiv  # pivot columns first
+
+        # Permutation matrix P such that for any matrix M, M*P has columns reordered by `order`.
+        P = sp.Matrix.zeros(n, n)
+        for new_j, old_j in enumerate(order):
+            P[old_j, new_j] = 1
+
+        # Free parameter block Tbar (e × (n-e)).
+        nfree = n - int(e)
+        free_params: List[sp.Symbol] = []
+        if nfree > 0:
+            if flat_numbering:
+                cnt = 1
+                Tbar = sp.Matrix.zeros(int(e), nfree)
+                for i in range(int(e)):
+                    for j in range(nfree):
+                        t = sp.Symbol(f"{free_param_prefix}{cnt}")
+                        free_params.append(t)
+                        Tbar[i, j] = t
+                        cnt += 1
+            else:
+                Tbar = sp.Matrix.zeros(int(e), nfree)
+                for i in range(int(e)):
+                    for j in range(nfree):
+                        t = sp.Symbol(f"{free_param_prefix}_{i+1}{j+1}")
+                        free_params.append(t)
+                        Tbar[i, j] = t
+        else:
+            Tbar = sp.Matrix.zeros(int(e), 0)
+
+        T_perm = sp.Matrix.hstack(sp.eye(int(e)), Tbar)  # e×n
+        B_perm = sp.Matrix.vstack(-Tbar, sp.eye(nfree))  # n×(n-e)
+
+        # Undo the column permutation: T = T_perm * P^{-1} = T_perm * P.T
+        T = sp.simplify(T_perm * P.T)
+        # Transform kernel basis to original variable ordering: B = P * B_perm
+        B = sp.simplify(P * B_perm)
+
+        return {
+            "T": T,
+            "B": B,
+            "free_params": free_params,
+            "pivot_cols": piv,
+            "nonpivot_cols": nonpiv,
+            "column_order": order,
+            "permutation_matrix": P,
+        }
+
+    def complete_to_invertible(
+        self,
+        T: sp.Matrix,
+        *,
+        extra_rows: Optional[Sequence[sp.Matrix]] = None,
+        strategy: str = "identity",
+    ) -> sp.Matrix:
+        """Complete an e×n matrix T to an n×n invertible matrix T*.
+
+        This supports the coordinate-change construction discussed in the paper
+        ("lumping-adapted" system): given a lumping matrix T, append (n-e) rows
+        to obtain an invertible matrix T*, then define y = T* x and transform the
+        ODE as y' = T* F(T*^{-1} y, k).
+
+        By default (`strategy='identity'`), we greedily append rows from the
+        identity matrix.
+
+        Parameters
+        ----------
+        T:
+            e×n matrix (usually full row rank).
+        extra_rows:
+            Optional explicit rows to append (each 1×n or n×1).
+        strategy:
+            Currently only 'identity' is implemented.
+
+        Returns
+        -------
+        T_star:
+            n×n matrix with top e rows equal to T.
+        """
+        n = self.network.n_species
+        Tm = sp.Matrix(T)
+        if Tm.cols != n:
+            raise ValueError(f"T must have {n} columns; got {Tm.cols}")
+
+        e = Tm.rows
+        if e > n:
+            raise ValueError("T has more rows than columns; cannot complete to square invertible matrix")
+        if e == n:
+            # Already square; check invertible (rank test).
+            if Tm.rank() != n:
+                raise ValueError("Provided square T is singular; cannot invert")
+            return Tm
+
+        base_rank = Tm.rank()
+
+        rows_to_try: List[sp.Matrix] = []
+        if extra_rows is not None:
+            for r in extra_rows:
+                rr = sp.Matrix(r)
+                if rr.shape == (n, 1):
+                    rr = rr.T
+                if rr.shape != (1, n):
+                    raise ValueError(f"Each extra row must be 1×{n} (or {n}×1); got {rr.shape}")
+                rows_to_try.append(rr)
+        else:
+            if strategy != "identity":
+                raise ValueError(f"Unknown completion strategy '{strategy}'")
+            I = sp.eye(n)
+            rows_to_try = [I.row(i) for i in range(n)]
+
+        T_star = sp.Matrix(Tm)
+        rnk = base_rank
+        for rr in rows_to_try:
+            if T_star.rows >= n:
+                break
+            cand = sp.Matrix.vstack(T_star, rr)
+            cand_rank = cand.rank()
+            if cand_rank > rnk:
+                T_star = cand
+                rnk = cand_rank
+
+        if T_star.rows != n or T_star.rank() != n:
+            raise ValueError(
+                "Failed to complete T to an invertible n×n matrix. "
+                "Try providing `extra_rows=` explicitly (or choose a different strategy)."
+            )
+
+        return T_star
+
+    def lumping_adapted_system(
+        self,
+        T: sp.Matrix,
+        *,
+        completion_rows: Optional[Sequence[sp.Matrix]] = None,
+        completion_strategy: str = "identity",
+        y_prefix: str = "y",
+        simplify: bool = True,
+    ) -> Dict[str, Any]:
+        """Compute a "lumping-adapted" coordinate representation of the ODE.
+
+        Given x' = F(x,k) and a candidate lumping matrix T (e×n), form an invertible
+        completion T* (n×n) by appending rows, define the new coordinates
+
+            y = T* x,
+
+        and compute the transformed vector field
+
+            y' = H(y,k) = T* F(T*^{-1} y, k).
+
+        The first e components of y are exactly the lumped variables y_1..y_e = T x
+        (because the top e rows of T* equal T).
+
+        This is the construction described in Sebastian's note (and referenced in the
+        paper around Remark 5 / Example 7).
+
+        Returns
+        -------
+        dict with keys:
+          - 'T_star', 'T_star_inv'
+          - 'y_symbols': tuple of length n
+          - 'x_in_terms_of_y': n×1 vector
+          - 'H': n×1 transformed RHS (in y variables)
+          - 'H_lumped': first e entries of H
+          - 'lumped_depends_on_extra': bool (whether H_lumped depends on y_{e+1..n})
+        """
+        n = self.network.n_species
+        Tm = sp.Matrix(T)
+        if Tm.cols != n:
+            raise ValueError(f"T must have {n} columns; got {Tm.cols}")
+
+        e = Tm.rows
+        if not (1 <= e <= n):
+            raise ValueError("T must have at least one row and at most n rows")
+
+        T_star = self.complete_to_invertible(
+            Tm, extra_rows=completion_rows, strategy=completion_strategy
+        )
+
+        # Symbols and substitutions.
+        y_syms = sp.symbols(" ".join([f"{y_prefix}{i+1}" for i in range(n)]), real=True)
+        y_vec = sp.Matrix(y_syms)
+
+        T_star_inv = sp.simplify(T_star.inv())
+        x_vec = sp.simplify(T_star_inv * y_vec)
+
+        x_syms = self.network.x_symbols
+        subs = {x_syms[i]: x_vec[i, 0] for i in range(n)}
+
+        F = self.network.rhs()
+        F_y = sp.Matrix([sp.together(F[i, 0].subs(subs)) for i in range(n)])
+        H = sp.Matrix([sp.together((T_star * F_y)[i, 0]) for i in range(n)])
+
+        if simplify:
+            H = sp.Matrix([sp.simplify(h) for h in list(H)])
+            x_vec = sp.Matrix([sp.simplify(xx) for xx in list(x_vec)])
+
+        H_lumped = sp.Matrix([H[i, 0] for i in range(e)])
+        extra_y = set(y_syms[e:])
+        lumped_depends_on_extra = any(bool(set(expr.free_symbols) & extra_y) for expr in list(H_lumped))
+
+        return {
+            "T": Tm,
+            "T_star": T_star,
+            "T_star_inv": T_star_inv,
+            "y_symbols": tuple(y_syms),
+            "x_in_terms_of_y": x_vec,
+            "H": H,
+            "H_lumped": H_lumped,
+            "lumped_depends_on_extra": lumped_depends_on_extra,
+        }
+
+    def critical_ideal(
+        self,
+        T: sp.Matrix,
+        *,
+        kernel_basis: Optional[sp.Matrix] = None,
+        variables: Optional[Sequence[sp.Symbol]] = None,
+    ) -> Any:
+        """Package the critical conditions for T as a `SingularIdeal` for export.
+
+        This is a convenience wrapper: it computes the critical-parameter
+        conditions and constructs a `SingularIdeal` whose generators are those
+        polynomial conditions.
+
+        The returned object lives in :mod:`lumping_analysis.singular` so that
+        ideal computations can be delegated to Singular.
+        """
+        from .singular import SingularIdeal  # local import to avoid hard dependency patterns
+
+        info = self.critical_conditions(T, kernel_basis=kernel_basis)
+        gens = info["conditions"]
+
+        if variables is None:
+            # Default ring variables = all non-state symbols appearing in the generators.
+            xset = set(self.network.x_symbols)
+            syms: set = set()
+            for g in gens:
+                syms |= {s for s in g.free_symbols if s not in xset}
+            variables = sorted(syms, key=lambda s: str(s))
+
+        return SingularIdeal.from_generators(gens, variables=variables)
+
     # ---------------------------------------------------------------------
     # Proper lumping (paper Section 5)
     # ---------------------------------------------------------------------
