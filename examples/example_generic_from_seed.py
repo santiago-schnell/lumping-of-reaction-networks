@@ -2,7 +2,7 @@ import sympy as sp
 from lumping_analysis import Reaction, ReactionNetwork, LumpingAnalyzer
 
 def main():
-    # Example 1 from the paper’s discussion style:
+    # Example 1:
     # X1 + X2 -> X3,  X4 + X5 -> X6
     k1, k2 = sp.symbols("k1 k2", positive=True)
 
