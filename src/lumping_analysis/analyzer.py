@@ -9,6 +9,7 @@ from scipy.integrate import solve_ivp
 from sympy.solvers.solveset import NonlinearError
 
 from .network import ReactionNetwork
+from .generic_lumping import generic_lumping_from_seed as _generic_lumping_from_seed
 
 
 def _matrix_from_nullspace(nullspace: List[sp.Matrix], n: int) -> sp.Matrix:
@@ -200,6 +201,13 @@ class LumpingAnalyzer:
     """
 
     network: ReactionNetwork
+    
+    def generic_lumping_from_seed(self, seed, *, remove_seeded_nonreactants: bool = True):
+        return _generic_lumping_from_seed(
+        self.network,
+        seed,
+        remove_seeded_nonreactants=remove_seeded_nonreactants,
+        )
 
     def find_generic_lumpings(self) -> Dict[str, Any]:
         """Compute the two generic lumping families from the paper.
