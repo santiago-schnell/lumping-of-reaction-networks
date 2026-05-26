@@ -4,7 +4,7 @@ A Python package for analyzing **exact linear lumping** of parameter-dependent *
 
 This repository accompanies the paper draft:
 
-> **“Lumping of reaction networks: Generic and critical parameters”** (draft dated **February 4, 2026**)
+> **"Lumping of reaction networks: Generic and critical parameters"** *(Nonlinearity submission)*
 
 The software implements the main computational ingredients from the paper:
 
@@ -40,6 +40,8 @@ In addition to these core computations, the package provides small “quality of
 - [Computer algebra workflows](#computer-algebra-workflows)
   - [Row-echelon ansatz enumeration (general linear lumpings)](#row-echelon-ansatz-enumeration-general-linear-lumpings)
   - [Component enumeration and decomposition](#component-enumeration-and-decomposition)
+- [Mathematica / Wolfram Language workflow](#mathematica--wolfram-language-workflow)
+- [Verification notes](#verification-notes)
 - [Numerical validation](#numerical-validation)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
@@ -113,6 +115,8 @@ If you see printed conditions and/or a reduced model description, your environme
   - `report.py`: compact console/Markdown reporting utilities
 - `examples/`: runnable scripts aligned with paper examples and common workflows
 - `tests/`: a small test suite (useful as executable documentation)
+- `mathematica/`: corresponding Mathematica / Wolfram Language workflow (see [section below](#mathematica--wolfram-language-workflow))
+- `notes/`: short SymPy scripts verifying selected mathematical claims in the manuscript (see [section below](#verification-notes))
 - `basic_usage.py`: a minimal one-file usage demo
 
 ### Example scripts
@@ -120,11 +124,12 @@ If you see printed conditions and/or a reduced model description, your environme
 The `examples/` directory contains runnable scripts that mirror common use-cases
 and (where applicable) align with examples in the paper draft.
 
-- `examples/example_4_2_three_species.py`: three-species linear network (paper Example 4.2)
-- `examples/example_constrained_michaelis_menten.py`: constrained reduction for reversible Michaelis–Menten (paper Example 4.4)
+- `examples/example_4_2_three_species.py`: three-species linear network (paper Section 4.4, three-species example)
+- `examples/example_constrained_michaelis_menten.py`: constrained reduction for reversible Michaelis–Menten (paper Section 4.4, label `ex:mm`)
 - `examples/example_proper_lumping_michaelis_menten.py`: proper lumping criterion demonstration (paper Section 5)
 - `examples/search_proper_lumpings_michaelis_menten.py`: enumerate proper lumpings (small search)
-- `examples/example_section_6_gpl_replication.py`: self-replication case study setup (paper Section 6)
+- `examples/example_section_6_gpl_replication.py`: self-replication case study setup (paper Section 6.1)
+- `examples/example_section_6_two_pathway_enzyme.py`: two-pathway enzyme case study (paper Section 6.2)
 - `examples/enumerate_reductions_michaelis_menten.py`: batch enumeration + report printing
 
 You can run any of these from the repository root via `python examples/<script>.py`.
@@ -526,6 +531,55 @@ When interpreting components, remember that reaction-network rate constants are 
 - application-specific “admissible parameter” restrictions.
 
 So it is common that many algebraic components correspond to degenerate networks where some rates are forced to zero; those can be filtered out depending on your modeling intent.
+
+---
+
+## Mathematica / Wolfram Language workflow
+
+A subset of the symbolic computations used in the paper — in particular the
+critical-parameter ideal for the **two-pathway enzyme** example of Section 6.2 —
+is performed in Mathematica.  The reproducible artifacts are in the
+[`mathematica/`](mathematica/) folder:
+
+- `mathematica/two_pathway_enzyme_critical_variety.wl` — plain-text Wolfram
+  Language script that builds the row-echelon ansatz, the polynomial right
+  kernel basis, the **corrected** reversible mass-action vector field, and
+  prints the coefficient conditions.  Reviewable in version control;
+  reproducible from the command line via
+
+  ```bash
+  wolframscript -file mathematica/two_pathway_enzyme_critical_variety.wl
+  ```
+
+- `mathematica/lump_6dim_ex50_d3_B1.nb` — the corresponding Mathematica
+  notebook, re-run from a clean kernel.
+
+The script includes built-in conservation-law checks for the reversible
+final catalytic step (`C ⇌ E + P`).  See `mathematica/README.md` for the
+detailed description and a guide for exporting the resulting ideal to
+Singular.
+
+---
+
+## Verification notes
+
+The [`notes/`](notes/) folder contains short SymPy scripts that
+independently verify selected mathematical claims of the manuscript:
+
+- `notes/verify_ex_mm_typo.py` — symbolic proof that with the labels
+  `y_1 = s+p`, `y_2 = e+c`, `y_3 = s+c+p` used in Example `ex:mm` (paper
+  Section 4.4), the nontrivial dynamics at the critical parameter
+  `k_1 = k_{-2}` belong to `dy_1/dt`, and that `y_2` and `y_3` are first
+  integrals.
+
+- `notes/verify_section_5_errors.py` — SymPy verification of the
+  proper-lumping coefficient/scaling formulas of Section 5: the
+  linear-coefficient scaling under variable rescaling, the column-sum
+  characterisation `c_{pq}` of the reduced linear coefficient, and the
+  diagonal of the dissipative intra-block correction matrix.
+
+Both scripts run in a few seconds and print a step-by-step derivation
+suitable for sharing.
 
 ---
 
