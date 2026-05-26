@@ -2,8 +2,8 @@
 
 This package implements symbolic tools for analyzing **linear lumping** of
 parameter-dependent mass action reaction networks, as described in the paper
-"Lumping of reaction networks: Generic and critical parameters" (draft dated
-Feb 4, 2026).
+"Lumping of reaction networks: Generic and critical parameters"
+(Nonlinearity submission).
 
 Public API:
 - Reaction, ReactionNetwork
@@ -25,6 +25,7 @@ from .examples import (
     michaelis_menten_network,
     three_species_linear_network,
     gpl_replication_network,
+    two_pathway_enzyme_network,
 )
 
 __all__ = [
@@ -39,4 +40,5 @@ __all__ = [
     "michaelis_menten_network",
     "three_species_linear_network",
     "gpl_replication_network",
+    "two_pathway_enzyme_network",
 ]
