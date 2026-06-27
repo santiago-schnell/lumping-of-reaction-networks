@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-(* Corrected core Mathematica/Wolfram Language workflow for the two-pathway enzyme example. *)
+(* Mathematica/Wolfram Language workflow for the two-pathway enzyme example. *)
 (* Species order: x1=s, x2=e, x3=c1, x4=c2, x5=c, x6=p. *)
 (* Reversible catalytic step: X5 <-> X2 + X6 with rates k5, km5. *)
 
@@ -25,7 +25,7 @@ kernelCheck = Simplify[T . B];
 If[kernelCheck =!= ConstantArray[0, {3, 3}],
    Print["ERROR: B is not a right kernel basis for T: ", kernelCheck]];
 
-(* Corrected mass-action vector field. The key correction is + km5*x2*x6 in x5d. *)
+(* Reversible mass-action vector field, with the + km5*x2*x6 term in x5d. *)
 x1d = -k1*x1*x2 + km1*x3 - k3*x1*x2 + km3*x4;
 x2d = -k1*x1*x2 + km1*x3 - k3*x1*x2 + km3*x4 + k5*x5 - km5*x2*x6;
 x3d =  k1*x1*x2 - km1*x3 - k2*x3 + km2*x5;
@@ -54,7 +54,7 @@ M = Normal[arrays[[2]]];
 If[Factor[constantPart] =!= ConstantArray[0, Length[conditions]],
    Print["ERROR: conditions are not homogeneous-linear in rate constants. Constant part: ", constantPart]];
 
-(* These are the km5-sensitive conditions that differ from the previous notebook. *)
+(* The km5-sensitive conditions arising from the reversible final step. *)
 km5SensitiveConditions = Select[conditions, ! FreeQ[#, km5] &] // Factor;
 
 Print["T.B = "]; Print[MatrixForm[kernelCheck]];

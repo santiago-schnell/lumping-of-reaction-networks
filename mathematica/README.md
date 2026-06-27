@@ -1,14 +1,16 @@
 # Mathematica / Wolfram Language workflow
 
-This folder contains the symbolic computation that produces the critical-parameter
-ideal for the two-pathway enzyme example in Section 6.2 of the paper.
+This folder contains the symbolic computations that produce the
+critical-parameter systems for the two case studies in Section 6 of the paper:
+the self-replication model (Section 6.1) and the two-pathway enzyme example
+(Section 6.2).
 
 ## Files
 
 | File | Description |
 |------|-------------|
-| `two_pathway_enzyme_critical_variety.wl` | Plain-text Wolfram Language script. Reproducible from the command line; the right entry point for review and version control. |
-| `lump_6dim_ex50_d3_B1.nb` | Original Mathematica notebook (Mathematica 13+). Re-run from a clean kernel after applying the same correction. |
+| `two_pathway_enzyme_critical_variety.wl` | Plain-text Wolfram Language script for the Section 6.2 enzyme example. Reproducible from the command line; the right entry point for review and version control. Can also be loaded into a Mathematica kernel (Mathematica 13+). |
+| `replication_critical_variety.wl` | Plain-text Wolfram Language script for the Section 6.1 self-replication model. Builds the constrained ansatz `T(p,q,r)`, the right-kernel basis `B`, the mass-action vector field, checks the two prescribed first integrals, and assembles the rate-constant coefficient matrix of Section 6.1. |
 
 ## What the script does
 
@@ -27,9 +29,8 @@ the script:
 1. Defines the species order `x1=s, x2=e, x3=c1, x4=c2, x5=c, x6=p`.
 2. Sets up the row-echelon lumping ansatz `T(t1,...,t9)` and the right-kernel
    basis `B(t1,...,t9)`, and verifies `T . B == 0`.
-3. Defines the **corrected** mass-action vector field. The key correction over
-   the prior notebook is the inclusion of `+ km5 * x2 * x6` in `x5d`, which is
-   required so that
+3. Defines the reversible mass-action vector field, including the
+   `+ km5 * x2 * x6` term in `x5d`, which is required so that
    - `x2 + x3 + x4 + x5` (total enzyme), and
    - `x1 + x3 + x4 + x5 + x6` (substrate--product balance)
    are conserved.  The script prints an error message if either conservation
@@ -40,8 +41,8 @@ the script:
 6. Splits the conditions into their constant and rate-linear parts using
    `CoefficientArrays`, and verifies that the constant part is zero
    (i.e.\ the system is homogeneous-linear in the rate constants for fixed `T,B`).
-7. Highlights the `km5`-sensitive conditions, which are the ones that change
-   under the correction.
+7. Highlights the `km5`-sensitive conditions arising from the reversible
+   final catalytic step.
 
 ## How to run
 
@@ -78,4 +79,3 @@ and paste the result into a Singular `ideal g = ...;` declaration.
   variables throughout so it is robust to being re-run cell by cell.
 * The first line is `ClearAll["Global`*"]`, which removes any stale definitions
   before the script begins.
-* Unused species variables `x7`, `x8` from earlier drafts have been removed.
