@@ -1,0 +1,50 @@
+// ============================================================================
+// Self-replication example -- critical-variety decomposition (Section 6.1).
+//
+// Evaluating the critical-parameter condition  T * DF(x,k) * B = 0  (for all x)
+// for the self-replication model yields a homogeneous-linear system in the rate
+// constants whose coefficients lie in C[p, q, r].  The generators below are the
+// nonzero coefficient conditions of that system -- equivalently, the nonzero
+// rows of the matrix reported in Section 6.1, assembled into the ideal whose
+// variety is the critical set.  They are produced by
+// mathematica/replication_critical_variety.wl and reproduced in Python by
+// examples/example_section_6_gpl_replication.py.
+//
+// Computing the minimal associate primes (minAssChar) gives the 22 irreducible
+// components reported in the appendix.
+//
+// Run with:   Singular replication_decomposition.sing
+// Tested against: Singular 4-3-x (primdec.lib ships with the distribution).
+// ============================================================================
+
+LIB "primdec.lib";
+
+ring R = 0,(p,q,r,k1,k2,k3,k4,k5,km1,km2,km3,km4,km5),dp;
+
+option(redSB);
+
+ideal g =
+  -k1*p^2 + k1*p,
+  -k2*p + k2*r - k3*p*q + k3*p,
+  k1*p^2 - 3*k1*p + 2*k1 + k3*p*q - k3*p - k3*q + k3 - 2*km5*p*r + 4*km5*p,
+  -k2*p^2 + k2*p*r + k2*p - k2*r,
+  -k4*p*q + k4*p*r + 2*k4*q - 2*k4*r,
+  -km1*p + km1,
+  -k1*p*q + k1*q - k4*q + k4*r,
+  -k3*q^2 + k3*q,
+  k1*p*q - k1*p - k1*q + k1 + k3*q^2 - 3*k3*q + 2*k3 - 2*km5*q*r + 4*km5*q,
+  -k2*p*q + 2*k2*p + k2*q*r - 2*k2*r,
+  -k4*q^2 + k4*q*r + k4*q - k4*r,
+  -km3*q + km3,
+  -k1*p*r + k1*r,
+  -k3*q*r + k3*r,
+  k1*p*r - 2*k1*p - k1*r + 2*k1 + k3*q*r - 2*k3*q - k3*r + 2*k3 - 2*km5*r^2 + 4*km5*r,
+  -k2*p*r + 2*k2*p + k2*r^2 - 2*k2*r,
+  -k4*q*r + 2*k4*q + k4*r^2 - 2*k4*r,
+  -k5*r + 2*k5 + km2*p - km2*r + km4*q - km4*r;
+
+list pr = minAssChar(g);
+"Number of minimal associate primes (paper reports 22):";  size(pr);
+"Minimal associate primes:";  pr;
+
+quit;

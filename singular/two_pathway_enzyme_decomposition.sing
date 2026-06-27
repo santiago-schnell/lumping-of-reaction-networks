@@ -1,0 +1,62 @@
+// ============================================================================
+// Two-pathway enzyme example -- critical-variety decomposition (Section 6.2).
+//
+// This script reproduces the Singular computations reported in the paper:
+//   Part 1: factorizing standard basis of the critical-parameter ideal
+//           (facstd); the paper reports 92 components.
+//   Part 2: elimination of the lumping parameters t1..t9 followed by the
+//           minimal associate primes of the elimination ideal (minAssChar),
+//           which give the manageable critical-parameter conditions.
+//
+// The ideal `g` is the raw output of the Mathematica computation in
+// mathematica/two_pathway_enzyme_critical_variety.wl (and is reproduced
+// independently in Python by examples/example_section_6_two_pathway_enzyme.py).
+//
+// Run with:   Singular two_pathway_enzyme_decomposition.sing
+// Tested against: Singular 4-3-x (primdec.lib ships with the distribution).
+// Note: the facstd step takes a few minutes.
+// ============================================================================
+
+ring R = 0,(t1,t2,t3,t4,t5,t6,t7,t8,t9,k1,k2,k3,k4,k5,km1,km2,km3,km4,km5),dp;
+
+option(redSB);
+
+ideal g =
+  (k1 + k3)*(1 + t1),
+  -((k1 + k3)*t1*(1 + t1)),
+  km5*(t1 - t2 + t3),
+  km1*t4 + km1*t1*t4 + k2*t2*t4 + km3*t7 + km3*t1*t7 + k4*t2*t7,
+  -((k1 + k3)*(1 + t1)*t2),
+  -(k5*t1) + k5*t2 + km2*t2 + km4*t2 - k5*t3 + km1*t5 + km1*t1*t5 + k2*t2*t5 + km3*t8 + km3*t1*t8 + k4*t2*t8,
+  km5*t1 - km5*t2 - k1*t3 - k3*t3 + km5*t3 - k1*t1*t3 - k3*t1*t3,
+  km1*t6 + km1*t1*t6 + k2*t2*t6 + km3*t9 + km3*t1*t9 + k4*t2*t9,
+  -k1 + k1*t4 + k3*t4,
+  -(t1*(-k1 + k1*t4 + k3*t4)),
+  km5*(t4 - t5 + t6),
+  -(k2*t4) - km1*t4 + km1*t4^2 + k2*t4*t5 + km3*t4*t7 + k4*t5*t7,
+  -(t2*(-k1 + k1*t4 + k3*t4)),
+  -km2 - k5*t4 - k2*t5 + k5*t5 - km1*t5 + km2*t5 + km4*t5 + km1*t4*t5 + k2*t5^2 - k5*t6 + km3*t4*t8 + k4*t5*t8,
+  k1*t3 + km5*t4 - k1*t3*t4 - k3*t3*t4 - km5*t5 + km5*t6,
+  -(k2*t6) - km1*t6 + km1*t4*t6 + k2*t5*t6 + km3*t4*t9 + k4*t5*t9,
+  -k3 + k1*t7 + k3*t7,
+  -(t1*(-k3 + k1*t7 + k3*t7)),
+  km5*(t7 - t8 + t9),
+  -(k4*t7) - km3*t7 + km1*t4*t7 + km3*t7^2 + k2*t4*t8 + k4*t7*t8,
+  -(t2*(-k3 + k1*t7 + k3*t7)),
+  -km4 - k5*t7 + km1*t5*t7 - k4*t8 + k5*t8 + km2*t8 - km3*t8 + km4*t8 + k2*t5*t8 + km3*t7*t8 + k4*t8^2 - k5*t9,
+  k3*t3 + km5*t7 - k1*t3*t7 - k3*t3*t7 - km5*t8 + km5*t9,
+  km1*t6*t7 + k2*t6*t8 - k4*t9 - km3*t9 + km3*t7*t9 + k4*t8*t9;
+
+// ---- Part 1: factorizing standard basis (the paper reports 92 components) ----
+list j = facstd(g);
+"Number of facstd components (paper reports 92):";  size(j);
+j;
+
+// ---- Part 2: eliminate t1..t9, then minimal associate primes -----------------
+LIB "primdec.lib";
+ideal gk = eliminate(g, t1*t2*t3*t4*t5*t6*t7*t8*t9);
+"Elimination ideal in the rate constants:";  gk;
+list pr = minAssChar(gk);
+"Minimal associate primes of the elimination ideal:";  pr;
+
+quit;
