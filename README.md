@@ -2,9 +2,9 @@
 
 A Python package for analyzing **exact linear lumping** of parameter-dependent **mass action** reaction networks (and closely related polynomial ODE models).
 
-This repository accompanies the paper draft:
+This repository accompanies the submitted manuscript:
 
-> **"Lumping of reaction networks: Generic and critical parameters"** *(Nonlinearity submission)*
+> **"Lumping of reaction networks: Generic and critical parameters"** *(submitted manuscript)*
 
 The software implements the main computational ingredients from the paper:
 
@@ -15,6 +15,13 @@ The software implements the main computational ingredients from the paper:
    algebraic conditions on the rate constants under which **T** becomes an exact linear lumping.
 3. **Proper lumpings** (paper Section 5):
    partition-based lumping maps with a dedicated Jacobian block / column-sum criterion.
+
+
+### Scope
+
+The Python package implements the mass-action / polynomial ODE computations used in the examples: generic Type 1/Type 2 lumping, the Li--Rabitz critical-parameter condition `T*DF*B = 0`, proper-lumping column-sum tests, reduced-polynomial-system construction for small examples, and numerical validation.
+
+The manuscript also discusses product-form kinetic extensions and invariant-theoretic symmetry ideas. Those parts are theoretical in this repository; they are not yet exposed as a separate generalized-kinetics API.
 
 In addition to these core computations, the package provides small “quality of life” utilities:
 
@@ -41,6 +48,7 @@ In addition to these core computations, the package provides small “quality of
   - [Row-echelon ansatz enumeration (general linear lumpings)](#row-echelon-ansatz-enumeration-general-linear-lumpings)
   - [Component enumeration and decomposition](#component-enumeration-and-decomposition)
 - [Mathematica / Wolfram Language workflow](#mathematica--wolfram-language-workflow)
+- [Reproducibility artifacts](#reproducibility-artifacts)
 - [Verification notes](#verification-notes)
 - [Numerical validation](#numerical-validation)
 - [Troubleshooting](#troubleshooting)
@@ -116,20 +124,23 @@ If you see printed conditions and/or a reduced model description, your environme
 - `examples/`: runnable scripts aligned with paper examples and common workflows
 - `tests/`: a small test suite (useful as executable documentation)
 - `mathematica/`: corresponding Mathematica / Wolfram Language workflow (see [section below](#mathematica--wolfram-language-workflow))
+- `singular/`: Singular scripts decomposing the Section 6 critical-parameter ideals (`facstd`, `minAssChar`)
+- `results/`: frozen expected CAS outputs quoted in the manuscript appendices
+- `figures/`: source scripts and generated PDFs for the manuscript figures
 - `notes/`: short SymPy scripts verifying selected mathematical claims in the manuscript (see [section below](#verification-notes))
 - `basic_usage.py`: a minimal one-file usage demo
 
 ### Example scripts
 
 The `examples/` directory contains runnable scripts that mirror common use-cases
-and (where applicable) align with examples in the paper draft.
+and (where applicable) align with examples in the manuscript.
 
 - `examples/example_4_2_three_species.py`: three-species linear network (paper Section 4.4, three-species example)
 - `examples/example_constrained_michaelis_menten.py`: constrained reduction for reversible Michaelis–Menten (paper Section 4.4, label `ex:mm`)
 - `examples/example_proper_lumping_michaelis_menten.py`: proper lumping criterion demonstration (paper Section 5)
 - `examples/search_proper_lumpings_michaelis_menten.py`: enumerate proper lumpings (small search)
 - `examples/example_section_6_gpl_replication.py`: self-replication case study setup (paper Section 6.1)
-- `examples/example_section_6_two_pathway_enzyme.py`: two-pathway enzyme case study (paper Section 6.2)
+- `examples/example_section_6_two_pathway_enzyme.py`: two-pathway enzyme case study, including the explicit Component [6] reduction (paper Section 6.2)
 - `examples/enumerate_reductions_michaelis_menten.py`: batch enumeration + report printing
 
 You can run any of these from the repository root via `python examples/<script>.py`.
@@ -536,14 +547,15 @@ So it is common that many algebraic components correspond to degenerate networks
 
 ## Mathematica / Wolfram Language workflow
 
-A subset of the symbolic computations used in the paper — in particular the
-critical-parameter ideal for the **two-pathway enzyme** example of Section 6.2 —
-is performed in Mathematica.  The reproducible artifacts are in the
+A subset of the symbolic computations used in the paper — the
+critical-parameter systems for the **self-replication** model of Section 6.1
+and the **two-pathway enzyme** example of Section 6.2 — is performed in
+Mathematica.  The reproducible artifacts are in the
 [`mathematica/`](mathematica/) folder:
 
 - `mathematica/two_pathway_enzyme_critical_variety.wl` — plain-text Wolfram
   Language script that builds the row-echelon ansatz, the polynomial right
-  kernel basis, the **corrected** reversible mass-action vector field, and
+  kernel basis, the reversible mass-action vector field, and
   prints the coefficient conditions.  Reviewable in version control;
   reproducible from the command line via
 
@@ -551,13 +563,45 @@ is performed in Mathematica.  The reproducible artifacts are in the
   wolframscript -file mathematica/two_pathway_enzyme_critical_variety.wl
   ```
 
-- `mathematica/lump_6dim_ex50_d3_B1.nb` — the corresponding Mathematica
-  notebook, re-run from a clean kernel.
+  It can equally be loaded into a Mathematica kernel
+  (`<< two_pathway_enzyme_critical_variety.wl`).
 
-The script includes built-in conservation-law checks for the reversible
-final catalytic step (`C ⇌ E + P`).  See `mathematica/README.md` for the
-detailed description and a guide for exporting the resulting ideal to
-Singular.
+- `mathematica/replication_critical_variety.wl` — the counterpart for the
+  self-replication model: it builds the constrained lumping ansatz
+  `T(p,q,r)`, the right-kernel basis `B`, the mass-action vector field, checks
+  the two prescribed first integrals, and assembles the coefficient matrix in
+  the rate constants reported in Section 6.1.
+
+The scripts include built-in conservation-law / first-integral checks.  See
+`mathematica/README.md` for detailed descriptions and a guide for exporting the
+resulting ideals to Singular.
+
+The companion Singular scripts that decompose these ideals (the 92-component
+`facstd` decomposition for the enzyme example and the 22-component
+`minAssChar` decomposition for the self-replication model) are in the
+[`singular/`](singular/) folder; see `singular/README.md`.
+
+---
+
+
+## Reproducibility artifacts
+
+The repository includes lightweight outputs that make the submitted computations easier to check without requiring every reviewer to have the same external CAS stack installed.
+
+- `results/replication_minAssChar_22_components.txt` contains the 22 irreducible components reported for the self-replication ideal in Section 6.1 / Appendix 8.1.
+- `results/two_pathway_facstd_first5_components.txt` contains the first five components of the 92-component `facstd` output for the two-pathway enzyme ideal, as printed in Appendix 8.2.
+- `results/two_pathway_elimination_minAssChar_components.txt` contains the six parameter-only elimination components discussed in Section 6.2.
+- `figures/` contains the source files and generated PDFs for the manuscript figures. The Python figure scripts write outputs to `figures/generated/`; the TikZ flowchart can be rebuilt with a LaTeX installation that provides the `standalone` class.
+- `requirements-repro.txt` records the Python package versions used for the final smoke test in this repository. The Section 6 ideal decompositions additionally require Singular; the Wolfram Language scripts require Mathematica/WolframScript.
+
+From a clean checkout, the lightweight verification command is:
+
+```bash
+pip install -e .[dev]
+python -m pytest -q
+```
+
+The external CAS scripts are intentionally not part of the automated Python test suite.
 
 ---
 
@@ -566,17 +610,18 @@ Singular.
 The [`notes/`](notes/) folder contains short SymPy scripts that
 independently verify selected mathematical claims of the manuscript:
 
-- `notes/verify_ex_mm_typo.py` — symbolic proof that with the labels
-  `y_1 = s+p`, `y_2 = e+c`, `y_3 = s+c+p` used in Example `ex:mm` (paper
-  Section 4.4), the nontrivial dynamics at the critical parameter
+- `notes/verify_ex_mm_reduced_system.py` — symbolic confirmation that with
+  the labels `y_1 = s+p`, `y_2 = e+c`, `y_3 = s+p+c` used in Example `ex:mm`
+  (Section 4.4), the nontrivial dynamics at the critical parameter
   `k_1 = k_{-2}` belong to `dy_1/dt`, and that `y_2` and `y_3` are first
   integrals.
 
-- `notes/verify_section_5_errors.py` — SymPy verification of the
+- `notes/verify_section_5_formulas.py` — SymPy confirmation of the
   proper-lumping coefficient/scaling formulas of Section 5: the
   linear-coefficient scaling under variable rescaling, the column-sum
-  characterisation `c_{pq}` of the reduced linear coefficient, and the
-  diagonal of the dissipative intra-block correction matrix.
+  characterisation `mu_{pq}` of the reduced linear coefficient, and the
+  `-(m-1)*rho` diagonal of the intra-block correction matrix that makes
+  `y_p` a first integral.
 
 Both scripts run in a few seconds and print a step-by-step derivation
 suitable for sharing.
@@ -639,4 +684,4 @@ MIT License. See `LICENSE`.
 
 ## How to cite
 
-If you use this code in research, please cite the accompanying paper draft.
+If you use this code in research, please cite the accompanying manuscript and this software repository. A machine-readable citation template is provided in `CITATION.cff`.

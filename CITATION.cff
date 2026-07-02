@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the accompanying manuscript and this repository."
+title: "Lumping of reaction networks: Generic and critical parameters"
+authors:
+  - family-names: Eilertsen
+    given-names: Justin
+  - family-names: Romanovski
+    given-names: Valery G.
+  - family-names: Schnell
+    given-names: Santiago
+  - family-names: Walcher
+    given-names: Sebastian
+version: 0.4.1
+date-released: 2026-06-27
+license: MIT
+repository-code: "https://github.com/santiago-schnell/lumping-of-reaction-networks"
