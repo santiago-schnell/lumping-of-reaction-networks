@@ -1,7 +1,6 @@
-"""Paper constrained example: reversible Michaelis--Menten preserving integrals.
+r"""Paper constrained example: reversible Michaelis--Menten preserving integrals.
 
-This script implements the constrained ansatz from Example \label{ex:mm} in the
-Feb 4, 2026 draft.
+This script implements the constrained ansatz from Example \label{ex:mm} in the manuscript.
 
 Run:
     python examples/example_constrained_michaelis_menten.py
