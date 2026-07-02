@@ -54,3 +54,20 @@ def test_construct_reduced_polynomial_system_for_simple_projection():
     # Should contain the mass action term -k1*y1*y2 in both equations.
     assert sp.simplify(G[0] + k1 * y1 * y2) == 0
     assert sp.simplify(G[1] + k1 * y1 * y2) == 0
+
+def test_construct_reduced_polynomial_system_for_first_integrals_only():
+    """Regression test for one-monomial reduced systems (all derivatives zero)."""
+    net = michaelis_menten_network()
+    an = LumpingAnalyzer(net)
+
+    # The two stoichiometric first integrals for reversible Michaelis--Menten.
+    T = sp.Matrix([
+        [1, 0, 1, 1],  # s + c + p
+        [0, 1, 1, 0],  # e + c
+    ])
+    red = an.construct_reduced_polynomial_system(T)
+
+    assert red["G"].shape == (2, 1)
+    assert sp.simplify(red["G"][0]) == 0
+    assert sp.simplify(red["G"][1]) == 0
+
