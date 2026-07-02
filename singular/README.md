@@ -31,3 +31,8 @@ Singular singular/replication_decomposition.sing
 The `facstd` step for the enzyme ideal takes a few minutes; the published
 output is sensitive to the monomial ordering (`dp`) and to `option(redSB)`,
 both set at the top of the script.
+
+
+## Frozen expected outputs
+
+The corresponding expected text outputs quoted in the manuscript are stored in `../results/`.  This lets readers compare the paper's 22-component self-replication output and the two-pathway enzyme elimination/component excerpts without running Singular locally.
