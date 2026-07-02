@@ -1,0 +1,35 @@
+# Two-pathway enzyme: parameter-only elimination components
+# Paper Section 6.2.  Output obtained after eliminating t1..t9 and running minAssChar.
+
+[1]:
+   _[1]=km5
+   _[2]=k1^2*k2^2*k3*k4+k1*k2^2*k3^2*k4- k1^2*k2*k3*k4^2-
+   k1*k2*k3^2*k4^2- k1^2*k2^2*k3*k5+k1^2*k2*k3*k4*k5-
+   k1*k2*k3^2*k4*k5+  k1*k3^2*k4^2*k5+k1^2*k2*k3*k4*km1+
+   2*k1*k2*k3^2*k4*km1- k1*k3^2*k4^2*km1-k1^2*k2*k3*k5*km1-
+   k1*k3^2*k4*k5*km1+k1*k3^2*k4*km1^2+k1^2*k2*k3*k4*km2+
+   k1*k2*k3^2*k4*km2+k1*k3^2*k4^2*km2+k3^3*k4^2*km2-
+   k1^2*k2*k3*km1*km2-k1*k3^2*k4*km1*km2+k1^2*k2^2*k3*km3-
+   2*k1^2*k2*k3*k4*km3-k1*k2*k3^2*k4*km3+k1^2*k2*k3*k5*km3+
+   k1*k3^2*k4*k5*km3+k1^2*k2*k3*km1*km3-k1*k3^2*k4*km1*km3+
+   k1^2*k2*k3*km2*km3+k1*k3^2*k4*km2*km3- k1^2*k2*k3*km3^2-
+   k1^3*k2^2*km4-k1^2*k2^2*k3*km4-k1^2*k2*k3*k4*km4-
+   k1*k2*k3^2*k4*km4-k1^2*k2*k3*km1*km4-
+   k1*k3^2*k4*km1*km4+k1^2*k2*k3*km3*km4+k1*k3^2*k4*km3*km4
+[2]:
+   _[1]=km5
+   _[2]=k1*k2*k4+k2*k3*k4+k3*k4*km1+k1*k2*km3
+[3]:
+   _[1]=km4
+   _[2]=k3
+[4]:
+   _[1]=km2
+   _[2]=k1
+[5]:
+   _[1]=k4*km1*km2+km1*km2*km3+k2*km3*km4+km1*km3*km4
+   _[2]=k3*km1*km2+k1*k2*km4+k2*k3*km4+k3*km1*km4
+   _[3]=k1*k4*km2+k3*k4*km2+k1*km2*km3+k1*km3*km4
+   _[4]=k1*k2*k4+k2*k3*k4+k3*k4*km1+k1*k2*km3
+[6]:
+   _[1]=k2-k4+km1-km3
+   _[2]=k3*km2-k1*km4
