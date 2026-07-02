@@ -42,6 +42,24 @@ def _polynomial_coeff_conditions(expr: sp.Expr, x_symbols: Sequence[sp.Symbol]) 
     return [sp.simplify(c) for c in poly.coeffs()]
 
 
+
+
+def _symbols_tuple(names: Sequence[str], **assumptions: Any) -> Tuple[sp.Symbol, ...]:
+    """Return SymPy symbols as a tuple, including the one-symbol case.
+
+    ``sympy.symbols("x")`` returns a single ``Symbol`` whereas
+    ``sympy.symbols("x y")`` returns a tuple.  Several routines here iterate
+    over generated symbol collections, so normalising avoids one-dimensional
+    edge-case failures.
+    """
+    name_list = list(names)
+    if not name_list:
+        return tuple()
+    syms = sp.symbols(" ".join(name_list), **assumptions)
+    if isinstance(syms, tuple):
+        return syms
+    return (syms,)
+
 def _unique_simplified(exprs: Iterable[sp.Expr]) -> List[sp.Expr]:
     """De-duplicate expressions after simplify, identifying c and -c as equivalent.
 
@@ -655,7 +673,7 @@ class LumpingAnalyzer:
         )
 
         # Symbols and substitutions.
-        y_syms = sp.symbols(" ".join([f"{y_prefix}{i+1}" for i in range(n)]), real=True)
+        y_syms = _symbols_tuple([f"{y_prefix}{i+1}" for i in range(n)], real=True)
         y_vec = sp.Matrix(y_syms)
 
         T_star_inv = sp.simplify(T_star.inv())
@@ -936,7 +954,7 @@ class LumpingAnalyzer:
             F = F.subs(parameter_subs)
 
         y_expr = sp.simplify(T * x)
-        y_syms = sp.symbols(" ".join([f"y{i+1}" for i in range(e)]), real=True)
+        y_syms = _symbols_tuple([f"y{i+1}" for i in range(e)], real=True)
 
         ydot = sp.simplify(T * F)
 
@@ -961,7 +979,7 @@ class LumpingAnalyzer:
         equations: List[sp.Expr] = []
 
         for i in range(e):
-            ci = sp.symbols(" ".join([f"c_{i+1}_{j+1}" for j in range(len(monomials))]), real=True)
+            ci = _symbols_tuple([f"c_{i+1}_{j+1}" for j in range(len(monomials))], real=True)
             coeffs.extend(ci)
             g_i = sum(c * m for c, m in zip(ci, monomials))
             G_entries.append(g_i)
@@ -1134,7 +1152,7 @@ class LumpingAnalyzer:
 
         x = sp.Matrix(self.network.x_symbols)
         y = sp.Matrix(T * x)
-        y_syms = sp.symbols(" ".join([f"{y_prefix}{i+1}" for i in range(T.rows)]), real=True)
+        y_syms = _symbols_tuple([f"{y_prefix}{i+1}" for i in range(T.rows)], real=True)
         return [sp.Eq(y_syms[i], sp.simplify(y[i, 0])) for i in range(T.rows)]
 
     def enumerate_proper_reductions(
